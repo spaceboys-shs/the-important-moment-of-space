@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronicles of Cosmos | Space Exploration History</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Space Grotesk & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js for 3D Cosmic Background with Station & Meteors -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        space: {
+                            950: '#03050d',
+                            900: '#050714',
+                            800: '#0b0f28',
+                            700: '#141a3d',
+                            accent: '#6366f1',
+                            cyan: '#06b6d4',
+                            gold: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #03050d;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        
+        .glass-panel {
+            background: rgba(11, 15, 40, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.65);
+            border-color: rgba(99, 102, 241, 0.45);
+            transform: translateY(-4px);
+            box-shadow: 0 14px 35px -10px rgba(99, 102, 241, 0.25);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 25px rgba(99, 102, 241, 0.7);
+        }
+
+        .glow-cyan {
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.7);
+        }
+
+        /* Timeline Connector Line */
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #6366f1 0%, #06b6d4 50%, #ec4899 100%);
+            transform: translateX(-50%);
+            z-index: 0;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-line::before {
+                left: 24px;
+            }
+        }
+
+        /* Tech Scanlines Effect */
+        .scanline-overlay {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.25) 50%,
+                rgba(0, 0, 0, 0.25)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-space-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white min-h-screen relative overflow-x-hidden">
+
+    <!-- 3D Canvas Background for Starfield, Space Station & Meteors -->
+    <canvas id="bg-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-90"></canvas>
+    
+    <!-- CRT / HUD Scanline overlay -->
+    <div class="fixed inset-0 scanline-overlay z-0 opacity-20 pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-cyan-500 to-teal-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                    <i data-lucide="rocket" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <span class="font-display font-bold text-xl tracking-wider text-white block">CHRONICLES</span>
+                    <span class="text-xs text-cyan-400 tracking-widest font-mono uppercase block -mt-1">Of Cosmos</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+                <a href="#hero" class="hover:text-cyan-400 transition-colors">Overview</a>
+                <a href="#timeline-section" class="hover:text-cyan-400 transition-colors">Timeline</a>
+                <a href="#quiz-section" class="hover:text-cyan-400 transition-colors">Cosmic Quiz</a>
+                <a href="#favorites-section" class="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                    <i data-lucide="bookmark" class="w-4 h-4 text-amber-400"></i>
+                    Favorites <span id="fav-count" class="bg-indigo-600/80 text-white text-xs px-2 py-0.5 rounded-full font-mono">0</span>
+                </a>
+            </nav>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Status indicator for space station tracker -->
+                <div class="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono text-cyan-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>ISS ORBITAL FLYBY: <span id="iss-status" class="text-white font-bold">ACTIVE</span></span>
+                </div>
+
+                <button id="sound-toggle" title="Toggle Space Ambient Audio" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700">
+                    <i data-lucide="volume-x" id="sound-icon" class="w-4 h-4"></i>
+                </button>
+                <a href="#timeline-section" class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 transition-all">
+                    <span>Explore History</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-btn" class="md:hidden p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer Menu -->
+        <div id="mobile-menu" class="hidden md:hidden glass-panel border-t border-slate-800 px-6 py-4 space-y-3">
+            <a href="#hero" class="block py-2 text-slate-200 hover:text-cyan-400">Overview</a>
+            <a href="#timeline-section" class="block py-2 text-slate-200 hover:text-cyan-400">Timeline</a>
+            <a href="#quiz-section" class="block py-2 text-slate-200 hover:text-cyan-400">Cosmic Quiz</a>
+            <a href="#favorites-section" class="block py-2 text-slate-200 hover:text-cyan-400">Saved Favorites</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="relative pt-32 pb-20 md:pt-44 md:pb-32 z-10 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-6">
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 text-xs font-mono uppercase tracking-widest shadow-inner">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    Humanity's Cosmic Voyage • Live 3D Simulation
+                </div>
+
+                <!-- Main Headline -->
+                <h1 class="text-4xl sm:text-6xl lg:text-7xl font-display font-extrabold text-white tracking-tight leading-none">
+                    Triumphs of <br>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-cyan-300 to-pink-400 glow-text">
+                        Space History
+                    </span>
+                </h1>
+
+                <!-- Subtitle -->
+                <p class="text-base sm:text-lg text-slate-300 font-light leading-relaxed">
+                    From the beep of Sputnik to the deep universe gaze of the Webb Telescope. Watch space stations glide overhead and shooting stars streak across as you travel through the key milestones of cosmic discovery.
+                </p>
+
+                <!-- Quick Stats Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
+                    <div class="glass-card p-4 rounded-2xl text-center">
+                        <div class="text-2xl sm:text-3xl font-display font-bold text-cyan-400">1957</div>
+                        <div class="text-xs text-slate-400 mt-1 uppercase tracking-wider font-mono">First Satellite</div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-center">
+                        <div class="text-2xl sm:text-3xl font-display font-bold text-indigo-400">12</div>
+                        <div class="text-xs text-slate-400 mt-1 uppercase tracking-wider font-mono">Moon Walkers</div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-center">
+                        <div class="text-2xl sm:text-3xl font-display font-bold text-pink-400">15+</div>
+                        <div class="text-xs text-slate-400 mt-1 uppercase tracking-wider font-mono">Historic Milestones</div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-center">
+                        <div class="text-2xl sm:text-3xl font-display font-bold text-amber-400">24B km</div>
+                        <div class="text-xs text-slate-400 mt-1 uppercase tracking-wider font-mono">Voyager 1 Distance</div>
+                    </div>
+                </div>
+
+                <!-- Scroll Down Button -->
+                <div class="pt-6">
+                    <a href="#timeline-section" class="inline-flex items-center gap-2 text-xs font-mono text-slate-400 hover:text-cyan-400 transition-colors uppercase tracking-widest">
+                        <span>Scroll To Discover</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 animate-bounce"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Timeline Section Header & Controls -->
+    <section id="timeline-section" class="relative z-10 py-12 bg-space-900/60 backdrop-blur-md border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-display font-bold text-white flex items-center gap-3">
+                        <i data-lucide="orbit" class="w-8 h-8 text-indigo-400"></i>
+                        Historic Milestones
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Filter by era or search specific missions, astronauts, and spacecraft.</p>
+                </div>
+
+                <!-- Controls: Search & Layout Toggle -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Search Input -->
+                    <div class="relative min-w-[240px] flex-1 sm:flex-initial">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" placeholder="Search mission, moon, shuttle..." class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                    </div>
+
+                    <!-- View Switcher -->
+                    <div class="flex bg-slate-800/90 p-1 rounded-xl border border-slate-700">
+                        <button id="view-timeline-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-indigo-600 text-white transition-all">
+                            <i data-lucide="git-commit" class="w-3.5 h-3.5"></i> Timeline
+                        </button>
+                        <button id="view-grid-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
+                            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Cards
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Era Category Filter Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-filters">
+                <button data-cat="all" class="filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-indigo-600 text-white border border-indigo-500 shadow-md transition-all">
+                    All Eras
+                </button>
+                <button data-cat="early" class="filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-500 transition-all">
+                    🚀 Space Race (1950s–60s)
+                </button>
+                <button data-cat="lunar" class="filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-500 transition-all">
+                    🌕 Lunar Missions
+                </button>
+                <button data-cat="stations" class="filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-500 transition-all">
+                    🛰️ Space Stations & Shuttles
+                </button>
+                <button data-cat="probes" class="filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-500 transition-all">
+                    🔭 Deep Space & Telescopes
+                </button>
+                <button data-cat="modern" class="filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-500 transition-all">
+                    🛸 Modern Era (2015+)
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Display Container -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Timeline View Container -->
+        <div id="timeline-view" class="relative timeline-line space-y-12">
+            <!-- Dynamic Content Injected Here via JS -->
+        </div>
+
+        <!-- Grid View Container (Hidden by default) -->
+        <div id="grid-view" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamic Content Injected Here via JS -->
+        </div>
+
+        <!-- No Results Box -->
+        <div id="no-results" class="hidden py-16 text-center space-y-4">
+            <div class="w-16 h-16 bg-slate-800/80 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                <i data-lucide="search-x" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-display font-semibold text-white">No cosmic moments found</h3>
+            <p class="text-slate-400 text-sm">Try tweaking your search keywords or choosing a different era category filter.</p>
+        </div>
+    </main>
+
+    <!-- Cosmic Trivia Quiz Section -->
+    <section id="quiz-section" class="relative z-10 py-16 bg-space-800/60 border-t border-b border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-indigo-500/20 shadow-2xl space-y-6">
+                <div class="flex items-center gap-3">
+                    <span class="p-2.5 bg-indigo-600/30 rounded-xl text-indigo-400 border border-indigo-500/40">
+                        <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-2xl font-display font-bold text-white">Space History Quiz Challenge</h2>
+                        <p class="text-xs text-slate-400 font-mono">Test your knowledge of humanity's greatest space achievements!</p>
+                    </div>
+                </div>
+
+                <div id="quiz-card" class="space-y-6">
+                    <div class="flex justify-between items-center text-xs font-mono text-slate-400 pb-2 border-b border-slate-800">
+                        <span>QUESTION <span id="quiz-progress-num">1</span> OF <span id="quiz-total-num">5</span></span>
+                        <span>SCORE: <span id="quiz-score" class="text-cyan-400 font-bold">0</span></span>
+                    </div>
+
+                    <h3 id="quiz-question-text" class="text-lg sm:text-xl font-medium text-slate-100">
+                        Loading quiz question...
+                    </h3>
+
+                    <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Options injected via JS -->
+                    </div>
+
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-sm font-medium"></div>
+
+                    <div class="flex justify-end pt-2">
+                        <button id="quiz-next-btn" class="hidden px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all flex items-center gap-2">
+                            <span>Next Question</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Saved Favorites Section -->
+    <section id="favorites-section" class="relative z-10 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl sm:text-3xl font-display font-bold text-white flex items-center gap-3">
+                    <i data-lucide="bookmark" class="w-6 h-6 text-amber-400"></i>
+                    Your Saved Cosmic Moments
+                </h2>
+            </div>
+            <div id="favorites-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Injected via JS -->
+            </div>
+            <div id="no-favorites" class="text-center py-12 glass-card rounded-2xl border border-dashed border-slate-800">
+                <i data-lucide="bookmark-plus" class="w-10 h-10 text-slate-600 mx-auto mb-3"></i>
+                <p class="text-slate-400 text-sm">You haven't bookmarked any historical moments yet.</p>
+                <p class="text-slate-500 text-xs mt-1">Click the bookmark icon on any milestone card to save it here for quick reference.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Milestone Detail Modal Popup -->
+    <div id="detail-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md transition-opacity">
+        <div class="glass-panel w-full max-w-3xl max-h-[90vh] rounded-3xl border border-slate-700 overflow-hidden flex flex-col shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <!-- Modal Header / Image Banner -->
+            <div class="relative h-64 sm:h-72 w-full overflow-hidden bg-slate-900">
+                <img id="modal-img" src="" alt="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                <button id="close-modal-btn" class="absolute top-4 right-4 p-2.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 hover:bg-slate-800 transition-all z-10">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <div class="absolute bottom-4 left-6 right-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span id="modal-date" class="px-3 py-1 bg-indigo-600/90 text-white font-mono text-xs rounded-full"></span>
+                        <span id="modal-category" class="px-3 py-1 bg-slate-800/80 text-cyan-300 text-xs rounded-full border border-slate-700"></span>
+                    </div>
+                    <h2 id="modal-title" class="text-2xl sm:text-3xl font-display font-bold text-white leading-tight"></h2>
+                </div>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-300 text-sm leading-relaxed">
+                <div>
+                    <h4 class="text-xs font-mono uppercase tracking-widest text-indigo-400 mb-2">Historical Context & Significance</h4>
+                    <p id="modal-description" class="text-slate-200 text-base leading-relaxed"></p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+                    <div class="glass-card p-4 rounded-xl border border-slate-800">
+                        <span class="text-xs font-mono text-slate-400 block mb-1">KEY FIGURES / AGENCY</span>
+                        <span id="modal-key-figures" class="font-medium text-white"></span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl border border-slate-800">
+                        <span class="text-xs font-mono text-slate-400 block mb-1">MISSION IMPACT</span>
+                        <span id="modal-impact" class="font-medium text-cyan-300"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-mono uppercase tracking-widest text-indigo-400 mb-2">Famous Quote or Landmark Fact</h4>
+                    <blockquote id="modal-quote" class="italic p-4 rounded-xl bg-indigo-950/40 border-l-4 border-indigo-500 text-slate-300 font-serif"></blockquote>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 sm:p-6 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between">
+                <button id="modal-bookmark-btn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all border border-slate-700 text-xs font-medium">
+                    <i data-lucide="bookmark" class="w-4 h-4 text-amber-400"></i>
+                    <span>Save to Favorites</span>
+                </button>
+                <button id="modal-close-bottom" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-slate-800 bg-space-950 py-12 text-slate-400 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+            <div class="flex items-center justify-center gap-2 text-white font-display font-bold text-lg">
+                <i data-lucide="rocket" class="w-5 h-5 text-indigo-400"></i>
+                CHRONICLES OF COSMOS
+            </div>
+            <p class="text-xs text-slate-500 max-w-xl mx-auto">
+                Dedicated to documenting humanity's endless curiosity, scientific triumphs, and fearless exploration of the universe.
+            </p>
+            <p class="text-xs text-slate-600 font-mono">
+                &copy; 2026 Space History Interactive Educational Archive.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const spaceMilestones = [
+            {
+                id: 'sputnik-1',
+                year: '1957',
+                date: 'October 4, 1957',
+                title: 'Sputnik 1 Launch',
+                subtitle: 'The dawn of the Space Age',
+                category: 'early',
+                categoryLabel: 'Space Race',
+                agency: 'Soviet Union (USSR)',
+                impact: 'Triggered the Global Space Race & Modern Tech Era',
+                image: 'https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'The USSR launched Sputnik 1, the world\'s first artificial satellite, sending radio beeps back to Earth and changing human history forever.',
+                fullDesc: 'On October 4, 1957, the Soviet Union successfully launched Sputnik 1 into Earth orbit. A polished metal sphere with four external radio antennas, Sputnik orbited Earth every 96 minutes at 29,000 km/h. Its distinctive radio signal was audible to amateur radio operators worldwide, shocking Western nations and igniting the Cold War Space Race.',
+                quote: '"A beep-beep sound that echoed across the globe and opened the gateway to outer space for all humankind."',
+                specs: 'Weight: 83.6 kg | Diameter: 58 cm | Battery life: 21 days'
+            },
+            {
+                id: 'yuri-gagarin',
+                year: '1961',
+                date: 'April 12, 1961',
+                title: 'First Human in Space',
+                subtitle: 'Yuri Gagarin orbits Earth aboard Vostok 1',
+                category: 'early',
+                categoryLabel: 'Space Race',
+                agency: 'Soviet Cosmonaut Program',
+                impact: 'Proved humans could survive spaceflight and orbital conditions',
+                image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Soviet cosmonaut Yuri Gagarin became the first human to travel into outer space, completing one orbit of the Earth in 108 minutes.',
+                fullDesc: 'Aboard the Vostok 1 spacecraft, 27-year-old Yuri Gagarin uttered his famous word "Poyekhali!" ("Let\'s go!") as the rocket ignited. During the 108-minute mission, Gagarin orbited Earth at a maximum altitude of 327 kilometers, experiencing weightlessness and viewing the planet\'s curvature for the first time in human history.',
+                quote: '"Orbiting Earth in the spaceship, I saw how beautiful our planet is. People, let us preserve and increase this beauty, not destroy it!" — Yuri Gagarin',
+                specs: 'Flight Duration: 108 minutes | Max Altitude: 327 km'
+            },
+            {
+                id: 'apollo-11',
+                year: '1969',
+                date: 'July 20, 1969',
+                title: 'Apollo 11 Moon Landing',
+                subtitle: '"One small step for man, one giant leap for mankind"',
+                category: 'lunar',
+                categoryLabel: 'Lunar Mission',
+                agency: 'NASA (United States)',
+                impact: 'First human footprint on an extraterrestrial world',
+                image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Neil Armstrong and Buzz Aldrin landed the Apollo 11 Lunar Module Eagle on the Moon, walking on the lunar surface while Michael Collins orbited above.',
+                fullDesc: 'An estimated 650 million viewers watched as Commander Neil Armstrong stepped off the lunar module ladder onto the dust of the Sea of Tranquility. Armstrong and Lunar Module Pilot Buzz Aldrin spent over two hours exploring the surface, collecting 21.5 kg of lunar rock samples, setting up scientific equipment, and planting the American flag.',
+                quote: '"That\'s one small step for man, one giant leap for mankind." — Neil Armstrong',
+                specs: 'Crew: Armstrong, Aldrin, Collins | Moon Time: 21 hrs 36 min'
+            },
+            {
+                id: 'salyut-1',
+                year: '1971',
+                date: 'April 19, 1971',
+                title: 'Salyut 1 Space Station',
+                subtitle: 'The world\'s first crewed space station',
+                category: 'stations',
+                categoryLabel: 'Space Station',
+                agency: 'Soviet Union (USSR)',
+                impact: 'Pioneered long-duration human habitation in space',
+                image: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Salyut 1 was launched by the Soviet Union, inaugurating the era of orbital space stations where astronauts could live and conduct research.',
+                fullDesc: 'Salyut 1 paved the way for permanent human presence in low Earth orbit. Measuring 20 meters in length and weighing over 18 metric tons, it allowed crews from Soyuz 11 to spend 23 days aboard conducting astronomy, plant growth studies, and medical experiments.',
+                quote: '"Salyut proved that space was not just a destination for short visits, but a new habitat for humanity."',
+                specs: 'Length: 20m | In Orbit: 175 days | Orbits: 2,929'
+            },
+            {
+                id: 'voyager-1',
+                year: '1977',
+                date: 'September 5, 1977',
+                title: 'Voyager 1 Launch',
+                subtitle: 'Humanity\'s furthest interstellar messenger',
+                category: 'probes',
+                categoryLabel: 'Deep Space',
+                agency: 'NASA / JPL',
+                impact: 'First human object to enter Interstellar Space',
+                image: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Voyager 1 was launched to explore Jupiter and Saturn. It carried the Golden Record and eventually crossed into interstellar space in 2012.',
+                fullDesc: 'Voyager 1 provided stunning close-up images of Jupiter\'s Great Red Spot and Saturn\'s complex rings. Carried aboard is the Golden Record—a gold-plated copper phonograph disk containing greetings in 55 languages, sounds of Earth, and music intended for intelligent extra-terrestrial life. In August 2012, Voyager 1 officially crossed the heliopause into interstellar space.',
+                quote: '"Look again at that dot. That\'s here. That\'s home. That\'s us." — Carl Sagan on the Pale Blue Dot',
+                specs: 'Distance: ~24+ Billion km | Power: Radioisotope Thermoelectric Generator'
+            },
+            {
+                id: 'space-shuttle-columbia',
+                year: '1981',
+                date: 'April 12, 1981',
+                title: 'First Space Shuttle Flight (STS-1)',
+                subtitle: 'Reusable winged spacecraft revolutionize spaceflight',
+                category: 'stations',
+                categoryLabel: 'Space Shuttle',
+                agency: 'NASA (United States)',
+                impact: 'First reusable orbital spacecraft',
+                image: 'https://images.unsplash.com/photo-1516849841032-87cbac4d88f7?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Space Shuttle Columbia launched on STS-1, piloted by John Young and Robert Crippen, marking the first flight of NASA\'s Space Transportation System.',
+                fullDesc: 'Unlike earlier single-use capsules, the Space Shuttle orbited Earth as a spacecraft and glided back to a runway landing like an airplane. STS-1 proved the concept of a reusable spaceplane that could transport heavy payloads, launch satellites, repair space telescopes, and assemble space stations over three decades of service.',
+                quote: '"The Boldest Test Flight in History." — NASA STS-1 Commemorative',
+                specs: 'Orbiter: Columbia | Payload to LEO: 27,500 kg'
+            },
+            {
+                id: 'hubble-launch',
+                year: '1990',
+                date: 'April 24, 1990',
+                title: 'Hubble Telescope Launch',
+                subtitle: 'Unveiling deep cosmic mysteries to mankind',
+                category: 'probes',
+                categoryLabel: 'Space Telescope',
+                agency: 'NASA & ESA',
+                impact: 'Transformed modern astronomy and determined the age of the Universe',
+                image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Space Shuttle Discovery deployed the Hubble Space Telescope into orbit, giving astronomers a crystal-clear view beyond Earth\'s distorted atmosphere.',
+                fullDesc: 'Hubble has made over 1.5 million observations of deep space, capturing iconic images like the Pillars of Creation and Deep Field galaxies. Its data helped pinpoint the age of the universe to approximately 13.8 billion years, confirmed the expansion rate of space, and revealed supermassive black holes at the centers of galaxies.',
+                quote: '"Hubble changed the way humanity views the cosmos, turning abstract math into breathtaking visual reality."',
+                specs: 'Primary Mirror: 2.4 meters | Orbit: 540 km altitude'
+            },
+            {
+                id: 'iss-assembly',
+                year: '1998',
+                date: 'November 20, 1998',
+                title: 'ISS Assembly Begins',
+                subtitle: 'Zarya module launched, starting global space cooperation',
+                category: 'stations',
+                categoryLabel: 'Space Station',
+                agency: 'NASA, Roscosmos, ESA, JAXA, CSA',
+                impact: 'Longest continuous human presence in space (25+ years uninterrupted)',
+                image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'The first module of the International Space Station, Zarya, was launched, inaugurating the largest peaceful scientific engineering project in history.',
+                fullDesc: 'Constructed piece-by-piece over dozens of missions, the ISS spans the size of a football field. Since November 2000, human beings have lived continuously aboard the station, performing thousands of microgravity research experiments in medicine, physics, biology, and materials science.',
+                quote: '"An orbiting monument to international diplomacy and peaceful human collaboration."',
+                specs: 'Mass: 450,000 kg | Speed: 28,000 km/h (90 mins per orbit)'
+            },
+            {
+                id: 'curiosity-rover',
+                year: '2012',
+                date: 'August 5, 2012',
+                title: 'Curiosity Rover Lands on Mars',
+                subtitle: '"Seven Minutes of Terror" landing at Gale Crater',
+                category: 'probes',
+                categoryLabel: 'Mars Exploration',
+                agency: 'NASA / JPL',
+                impact: 'Discovered ancient liquid water environments on Mars',
+                image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'NASA\'s car-sized Curiosity rover touched down in Mars\' Gale Crater using an unprecedented Sky Crane landing system to search for past habitable environments.',
+                fullDesc: 'The touchdown involved a complex entry, descent, and landing maneuver known as the "7 Minutes of Terror." Curiosity carried an onboard chemical laboratory, drill, and laser instrument. It quickly proved that Mars once possessed ancient freshwater lakes and organic molecules capable of supporting microbial life.',
+                quote: '"Touchdown confirmed! We are safe on Mars!" — JPL Mission Control',
+                specs: 'Weight: 899 kg | Power: Plutonium-238 RTG'
+            },
+            {
+                id: 'falcon-9-landing',
+                year: '2015',
+                date: 'December 21, 2015',
+                title: 'First Commercial Booster Landing',
+                subtitle: 'SpaceX lands Falcon 9 orbital rocket booster',
+                category: 'modern',
+                categoryLabel: 'Commercial Space',
+                agency: 'SpaceX',
+                impact: 'Began the modern era of cheap, reusable space transportation',
+                image: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'SpaceX achieved the first successful vertical landing of an orbital-class rocket booster at Landing Zone 1, Cape Canaveral.',
+                fullDesc: 'After launching 11 ORBCOMM satellites to orbit, the Falcon 9 first stage re-entered Earth\'s atmosphere, performed boostback and landing burns, and touched down vertically on landing legs. This historic achievement slashed launch costs and made rocket reusability the new industry standard.',
+                quote: '"Welcome back, baby!" — Elon Musk on Falcon 9 first landing success',
+                specs: 'Height: 70m | Engine: 9 Merlin 1D Engines | Thrust: 7.6 MN'
+            },
+            {
+                id: 'black-hole-image',
+                year: '2019',
+                date: 'April 10, 2019',
+                title: 'First Image of a Black Hole',
+                subtitle: 'Event Horizon Telescope captures supermassive black hole M87*',
+                category: 'probes',
+                categoryLabel: 'Astrophysics',
+                agency: 'Event Horizon Telescope (EHT) Collaboration',
+                impact: 'Direct visual proof of Einstein\'s General Relativity',
+                image: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Scientists unveiled the first-ever direct photograph of a black hole shadow located at the center of galaxy Messier 87, 55 million light-years away.',
+                fullDesc: 'Using an Earth-sized virtual telescope array combining radio observatories across Hawaii, Chile, Spain, and Antarctica, the EHT team imaged the glowing ring of superheated gas swirling around the event horizon of a black hole 6.5 billion times more massive than our Sun.',
+                quote: '"We have seen what was thought to be unseeable. We have taken a picture of a black hole." — Sheperd Doeleman',
+                specs: 'Mass: 6.5 Billion Suns | Distance: 55 Million Light Years'
+            },
+            {
+                id: 'jwst-launch',
+                year: '2021',
+                date: 'December 25, 2021',
+                title: 'James Webb Telescope Launch',
+                subtitle: 'Peering into the first light after the Big Bang',
+                category: 'modern',
+                categoryLabel: 'Deep Space',
+                agency: 'NASA, ESA, CSA',
+                impact: 'Largest, most powerful infrared space telescope in history',
+                image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'Launched on Christmas Day, the James Webb Space Telescope traveled 1.5 million km to the L2 Lagrange point to peer into the universe\'s earliest galaxies.',
+                fullDesc: 'Featuring a 6.5-meter gold-coated beryllium mirror and a tennis-court-sized sunshield, Webb operates in infrared wavelengths. It can peer through cosmic dust to detect the atmosphere of exoplanets and observe the first stars and galaxies formed shortly after the Big Bang 13.5 billion years ago.',
+                quote: '"Webb\'s first deep field image isn\'t just a picture; it\'s a time machine looking back 13 billion years."',
+                specs: 'Mirror Diameter: 6.5m | Operating Temp: -233°C (-388°F)'
+            },
+            {
+                id: 'chandrayaan-3',
+                year: '2023',
+                date: 'August 23, 2023',
+                title: 'Chandrayaan-3 Moon South Pole Landing',
+                subtitle: 'India becomes first nation to land near lunar South Pole',
+                category: 'modern',
+                categoryLabel: 'Lunar Mission',
+                agency: 'ISRO (India)',
+                impact: 'Opened lunar South Pole exploration for water-ice prospecting',
+                image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1000&q=80',
+                shortDesc: 'India\'s Vikram lander and Pragyan rover successfully soft-landed near the unexplored lunar South Pole, confirming sulfur and soil minerals.',
+                fullDesc: 'ISRO\'s budget-efficient mission made India only the 4th country to achieve a soft moon landing, and the first ever to land near the rugged South Pole region where shadowed craters harbour water ice necessary for future human moon bases.',
+                quote: '"India is now on the Moon! This success belongs to all of humanity." — Narendra Modi',
+                specs: 'Lander: Vikram | Rover: Pragyan | Site: 69.37°S Lunar Pole'
+            }
+        ];
+
+        const quizQuestions = [
+            {
+                question: "Which nation launched the world's first artificial satellite, Sputnik 1, in 1957?",
+                options: ["United States", "Soviet Union (USSR)", "United Kingdom", "France"],
+                answer: 1
+            },
+            {
+                question: "Who was the first human to step onto the lunar surface during Apollo 11?",
+                options: ["Buzz Aldrin", "Yuri Gagarin", "Neil Armstrong", "Michael Collins"],
+                answer: 2
+            },
+            {
+                question: "What is the primary mirror diameter of the James Webb Space Telescope (JWST)?",
+                options: ["2.4 meters", "4.0 meters", "6.5 meters", "10.0 meters"],
+                answer: 2
+            },
+            {
+                question: "Which space probe is currently the furthest human-made object from Earth?",
+                options: ["Voyager 1", "Hubble", "New Horizons", "Pioneer 10"],
+                answer: 0
+            },
+            {
+                question: "In 2023, which country became the first to land a rover near the Moon's South Pole?",
+                options: ["China", "United States", "India", "Japan"],
+                answer: 2
+            }
+        ];
+
+        let currentView = 'timeline'; // 'timeline' or 'grid'
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let savedFavorites = JSON.parse(localStorage.getItem('space_favs') || '[]');
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+        let isAudioPlaying = false;
+        let audioCtx = null;
+        let ambientOsc = null;
+
+        const timelineView = document.getElementById('timeline-view');
+        const gridView = document.getElementById('grid-view');
+        const noResults = document.getElementById('no-results');
+        const searchInput = document.getElementById('search-input');
+        const viewTimelineBtn = document.getElementById('view-timeline-btn');
+        const viewGridBtn = document.getElementById('view-grid-btn');
+        const categoryFilters = document.getElementById('category-filters');
+        const favCountSpan = document.getElementById('fav-count');
+        const favoritesGrid = document.getElementById('favorites-grid');
+        const noFavorites = document.getElementById('no-favorites');
+
+        const detailModal = document.getElementById('detail-modal');
+        const modalImg = document.getElementById('modal-img');
+        const modalDate = document.getElementById('modal-date');
+        const modalCategory = document.getElementById('modal-category');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDescription = document.getElementById('modal-description');
+        modalKeyFigures = document.getElementById('modal-key-figures');
+        modalImpact = document.getElementById('modal-impact');
+        modalQuote = document.getElementById('modal-quote');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalCloseBottom = document.getElementById('modal-close-bottom');
+        const modalBookmarkBtn = document.getElementById('modal-bookmark-btn');
+        let activeModalId = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initThreeJSBackground();
+            renderMilestones();
+            renderFavorites();
+            initQuiz();
+            setupEventListeners();
+        });
+
+        function getFilteredMilestones() {
+            return spaceMilestones.filter(m => {
+                const matchesCategory = (currentFilter === 'all') || (m.category === currentFilter);
+                const matchesSearch = searchQuery === '' || 
+                    m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    m.shortDesc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    m.year.includes(searchQuery) ||
+                    m.agency.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+        }
+
+        function renderMilestones() {
+            const filtered = getFilteredMilestones();
+
+            if (filtered.length === 0) {
+                timelineView.classList.add('hidden');
+                gridView.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            }
+            noResults.classList.add('hidden');
+
+            // Render Timeline View
+            if (currentView === 'timeline') {
+                timelineView.classList.remove('hidden');
+                gridView.classList.add('hidden');
+
+                timelineView.innerHTML = filtered.map((m, idx) => {
+                    const isEven = idx % 2 === 0;
+                    const isFav = savedFavorites.includes(m.id);
+                    return `
+                        <div class="relative flex flex-col md:flex-row items-center group">
+                            <!-- Timeline Dot Indicator -->
+                            <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-space-900 border-2 border-indigo-500 flex items-center justify-center z-10 group-hover:scale-125 group-hover:border-cyan-400 group-hover:shadow-[0_0_15px_rgba(6,182,212,0.8)] transition-all">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 group-hover:bg-cyan-300"></span>
+                            </div>
+
+                            <!-- Content Box -->
+                            <div class="w-full md:w-1/2 pl-16 md:pl-0 ${isEven ? 'md:pr-12 md:text-right' : 'md:pl-12 md:ml-auto'}">
+                                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-3 cursor-pointer" onclick="openModal('${m.id}')">
+                                    <div class="flex items-center gap-2 ${isEven ? 'md:justify-end' : 'justify-start'} text-xs font-mono">
+                                        <span class="px-2.5 py-1 rounded-md bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-bold">${m.year}</span>
+                                        <span class="text-slate-400">${m.categoryLabel}</span>
+                                    </div>
+                                    <h3 class="text-xl font-display font-bold text-white group-hover:text-cyan-300 transition-colors">${m.title}</h3>
+                                    <p class="text-xs text-indigo-300 font-medium">${m.subtitle}</p>
+                                    <p class="text-slate-300 text-sm line-clamp-2">${m.shortDesc}</p>
+                                    
+                                    <div class="pt-3 flex items-center justify-between border-t border-slate-800/80 text-xs">
+                                        <span class="text-slate-400 font-mono">${m.agency}</span>
+                                        <button onclick="event.stopPropagation(); toggleFavorite('${m.id}')" class="p-1.5 rounded-lg hover:bg-slate-700/60 text-slate-400 hover:text-amber-400 transition-colors">
+                                            <i data-lucide="bookmark" class="w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-400' : ''}"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } 
+            // Render Grid View
+            else {
+                timelineView.classList.add('hidden');
+                gridView.classList.remove('hidden');
+
+                gridView.innerHTML = filtered.map(m => {
+                    const isFav = savedFavorites.includes(m.id);
+                    return `
+                        <div class="glass-card rounded-2xl overflow-hidden flex flex-col border border-slate-800 cursor-pointer group" onclick="openModal('${m.id}')">
+                            <div class="relative h-48 overflow-hidden">
+                                <img src="${m.image}" alt="${m.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                                <span class="absolute top-3 left-3 px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-cyan-300 font-mono text-xs rounded-lg border border-slate-700">${m.year}</span>
+                            </div>
+                            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                                <div>
+                                    <h3 class="text-lg font-display font-bold text-white group-hover:text-cyan-300 transition-colors">${m.title}</h3>
+                                    <p class="text-xs text-indigo-300 font-medium mt-0.5">${m.subtitle}</p>
+                                    <p class="text-slate-300 text-xs mt-2 line-clamp-3">${m.shortDesc}</p>
+                                </div>
+                                <div class="pt-3 flex items-center justify-between border-t border-slate-800 text-xs text-slate-400">
+                                    <span class="font-mono">${m.agency}</span>
+                                    <button onclick="event.stopPropagation(); toggleFavorite('${m.id}')" class="p-1.5 rounded-lg hover:bg-slate-700/60 text-slate-400 hover:text-amber-400 transition-colors">
+                                        <i data-lucide="bookmark" class="w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-400' : ''}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            lucide.createIcons();
+        }
+
+        function toggleFavorite(id) {
+            if (savedFavorites.includes(id)) {
+                savedFavorites = savedFavorites.filter(fav => fav !== id);
+            } else {
+                savedFavorites.push(id);
+            }
+            localStorage.setItem('space_favs', JSON.stringify(savedFavorites));
+            favCountSpan.textContent = savedFavorites.length;
+            renderMilestones();
+            renderFavorites();
+            if (activeModalId === id) {
+                updateModalBookmarkBtn(id);
+            }
+        }
+
+        function renderFavorites() {
+            favCountSpan.textContent = savedFavorites.length;
+            if (savedFavorites.length === 0) {
+                favoritesGrid.classList.add('hidden');
+                noFavorites.classList.remove('hidden');
+                return;
+            }
+            noFavorites.classList.add('hidden');
+            favoritesGrid.classList.remove('hidden');
+
+            const favList = spaceMilestones.filter(m => savedFavorites.includes(m.id));
+            favoritesGrid.innerHTML = favList.map(m => `
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between cursor-pointer" onclick="openModal('${m.id}')">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono text-cyan-400">${m.date}</span>
+                            <button onclick="event.stopPropagation(); toggleFavorite('${m.id}')" class="text-amber-400 hover:text-red-400 p-1">
+                                <i data-lucide="bookmark-check" class="w-4 h-4 fill-amber-400"></i>
+                            </button>
+                        </div>
+                        <h4 class="text-base font-display font-bold text-white">${m.title}</h4>
+                        <p class="text-slate-300 text-xs line-clamp-2">${m.shortDesc}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openModal(id) {
+            const item = spaceMilestones.find(m => m.id === id);
+            if (!item) return;
+
+            activeModalId = id;
+            modalImg.src = item.image;
+            modalImg.alt = item.title;
+            modalDate.textContent = item.date;
+            modalCategory.textContent = item.categoryLabel;
+            modalTitle.textContent = item.title;
+            modalDescription.textContent = item.fullDesc;
+            modalKeyFigures.textContent = item.agency;
+            modalImpact.textContent = item.impact;
+            modalQuote.textContent = item.quote;
+
+            updateModalBookmarkBtn(id);
+            detailModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            detailModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            activeModalId = null;
+        }
+
+        function updateModalBookmarkBtn(id) {
+            const isFav = savedFavorites.includes(id);
+            modalBookmarkBtn.innerHTML = `
+                <i data-lucide="bookmark" class="w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-400' : ''}"></i>
+                <span>${isFav ? 'Remove from Favorites' : 'Save to Favorites'}</span>
+            `;
+            lucide.createIcons();
+        }
+
+        function initQuiz() {
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const q = quizQuestions[currentQuizIndex];
+            document.getElementById('quiz-progress-num').textContent = currentQuizIndex + 1;
+            document.getElementById('quiz-total-num').textContent = quizQuestions.length;
+            document.getElementById('quiz-score').textContent = quizScore;
+            document.getElementById('quiz-question-text').textContent = q.question;
+
+            const optionsBox = document.getElementById('quiz-options');
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const nextBtn = document.getElementById('quiz-next-btn');
+
+            feedbackBox.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+
+            optionsBox.innerHTML = q.options.map((opt, i) => `
+                <button onclick="checkAnswer(${i})" class="quiz-opt-btn w-full p-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-left text-sm text-slate-200 border border-slate-700 transition-all font-medium flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-mono text-cyan-400">${String.fromCharCode(65 + i)}</span>
+                    ${opt}
+                </button>
+            `).join('');
+        }
+
+        function checkAnswer(optIndex) {
+            const q = quizQuestions[currentQuizIndex];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const nextBtn = document.getElementById('quiz-next-btn');
+            const buttons = document.querySelectorAll('.quiz-opt-btn');
+
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (optIndex === q.answer) {
+                quizScore += 20;
+                feedbackBox.className = "p-4 rounded-xl text-sm font-medium bg-emerald-950/80 border border-emerald-500/40 text-emerald-300";
+                feedbackBox.innerHTML = "✨ Correct! Fantastic space knowledge!";
+            } else {
+                feedbackBox.className = "p-4 rounded-xl text-sm font-medium bg-rose-950/80 border border-rose-500/40 text-rose-300";
+                feedbackBox.innerHTML = `❌ Incorrect. The correct answer was: <strong>${q.options[q.answer]}</strong>`;
+            }
+
+            document.getElementById('quiz-score').textContent = quizScore;
+            feedbackBox.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+        }
+
+        document.getElementById('quiz-next-btn').addEventListener('click', () => {
+            currentQuizIndex++;
+            if (currentQuizIndex < quizQuestions.length) {
+                renderQuizQuestion();
+            } else {
+                const quizCard = document.getElementById('quiz-card');
+                quizCard.innerHTML = `
+                    <div class="text-center py-8 space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-indigo-600/30 border border-indigo-400 flex items-center justify-center mx-auto text-amber-400">
+                            <i data-lucide="trophy" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-display font-bold text-white">Quiz Completed!</h3>
+                        <p class="text-slate-300 text-sm">Your Final Cosmic Knowledge Score: <strong class="text-cyan-400 text-lg">${quizScore} / 100</strong></p>
+                        <button onclick="restartQuiz()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all inline-flex items-center gap-2">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        });
+
+        function restartQuiz() {
+            currentQuizIndex = 0;
+            quizScore = 0;
+            location.reload();
+        }
+
+        function setupEventListeners() {
+            // Search Input
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim();
+                renderMilestones();
+            });
+
+            // Layout Toggle
+            viewTimelineBtn.addEventListener('click', () => {
+                currentView = 'timeline';
+                viewTimelineBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-indigo-600 text-white transition-all";
+                viewGridBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-white transition-all";
+                renderMilestones();
+            });
+
+            viewGridBtn.addEventListener('click', () => {
+                currentView = 'grid';
+                viewGridBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-indigo-600 text-white transition-all";
+                viewTimelineBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-white transition-all";
+                renderMilestones();
+            });
+
+            // Category Filter Pills
+            categoryFilters.addEventListener('click', (e) => {
+                const btn = e.target.closest('.filter-pill');
+                if (!btn) return;
+
+                document.querySelectorAll('.filter-pill').forEach(b => {
+                    b.className = "filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-500 transition-all";
+                });
+
+                btn.className = "filter-pill px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap bg-indigo-600 text-white border border-indigo-500 shadow-md transition-all";
+                currentFilter = btn.dataset.cat;
+                renderMilestones();
+            });
+
+            // Modal Close Controls
+            closeModalBtn.addEventListener('click', closeModal);
+            modalCloseBottom.addEventListener('click', closeModal);
+            detailModal.addEventListener('click', (e) => {
+                if (e.target === detailModal) closeModal();
+            });
+
+            modalBookmarkBtn.addEventListener('click', () => {
+                if (activeModalId) toggleFavorite(activeModalId);
+            });
+
+            // Mobile Menu Toggle
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Ambient Sound Synthesizer
+            const soundBtn = document.getElementById('sound-toggle');
+            const soundIcon = document.getElementById('sound-icon');
+            soundBtn.addEventListener('click', () => {
+                if (!isAudioPlaying) {
+                    startAmbientSound();
+                    soundIcon.setAttribute('data-lucide', 'volume-2');
+                    soundBtn.classList.add('border-indigo-500', 'text-indigo-400');
+                    isAudioPlaying = true;
+                } else {
+                    stopAmbientSound();
+                    soundIcon.setAttribute('data-lucide', 'volume-x');
+                    soundBtn.classList.remove('border-indigo-500', 'text-indigo-400');
+                    isAudioPlaying = false;
+                }
+                lucide.createIcons();
+            });
+        }
+
+        function startAmbientSound() {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                ambientOsc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                ambientOsc.type = 'sine';
+                ambientOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low deep space hum A1
+
+                gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                ambientOsc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                ambientOsc.start();
+            } catch (e) {
+                console.log('Audio init failed', e);
+            }
+        }
+
+        function stopAmbientSound() {
+            if (ambientOsc) {
+                ambientOsc.stop();
+                ambientOsc.disconnect();
+                ambientOsc = null;
+            }
+        }
+
+        function initThreeJSBackground() {
+            const canvas = document.getElementById('bg-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 12;
+
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // 1. STARFIELD PARTICLES
+            const starsCount = 2000;
+            const starGeometry = new THREE.BufferGeometry();
+            const starPositions = new Float32Array(starsCount * 3);
+
+            for (let i = 0; i < starsCount * 3; i += 3) {
+                starPositions[i] = (Math.random() - 0.5) * 50;
+                starPositions[i + 1] = (Math.random() - 0.5) * 50;
+                starPositions[i + 2] = (Math.random() - 0.5) * 50;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0x93c5fd,
+                size: 0.04,
+                transparent: true,
+                opacity: 0.85
+            });
+            const starField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starField);
+
+            // 2. GLOWING WIREFRAME PLANET / EARTH
+            const earthGroup = new THREE.Group();
+            const globeGeo = new THREE.IcosahedronGeometry(3.5, 3);
+            const globeMat = new THREE.MeshBasicMaterial({
+                color: 0x06b6d4,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.18
+            });
+            const globe = new THREE.Mesh(globeGeo, globeMat);
+            earthGroup.add(globe);
+
+            // Inner core glow
+            const coreGeo = new THREE.SphereGeometry(3.2, 16, 16);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0x3b82f6,
+                transparent: true,
+                opacity: 0.05
+            });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            earthGroup.add(core);
+
+            earthGroup.position.set(5, -2, -2);
+            scene.add(earthGroup);
+
+            // 3. 3D SPACE STATION (ISS MODEL)
+            const issGroup = new THREE.Group();
+
+            // Central Module Body
+            const bodyGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.6, 12);
+            const bodyMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
+            const centralBody = new THREE.Mesh(bodyGeo, bodyMat);
+            centralBody.rotation.z = Math.PI / 2;
+            issGroup.add(centralBody);
+
+            // Solar Array Truss
+            const trussGeo = new THREE.CylinderGeometry(0.04, 0.04, 3.2, 8);
+            const trussMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
+            const truss = new THREE.Mesh(trussGeo, trussMat);
+            issGroup.add(truss);
+
+            // Solar Panel Wings (Left & Right)
+            const panelGeo = new THREE.BoxGeometry(0.8, 1.4, 0.02);
+            const panelMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, wireframe: true });
+
+            const leftPanel1 = new THREE.Mesh(panelGeo, panelMat);
+            leftPanel1.position.set(-1.2, 0, 0);
+            issGroup.add(leftPanel1);
+
+            const rightPanel1 = new THREE.Mesh(panelGeo, panelMat);
+            rightPanel1.position.set(1.2, 0, 0);
+            issGroup.add(rightPanel1);
+
+            // Red/Cyan Thruster Light Beacon
+            const beaconGeo = new THREE.SphereGeometry(0.08, 8, 8);
+            const beaconMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+            beacon.position.set(0, 0.2, 0);
+            issGroup.add(beacon);
+
+            // Position & Scale ISS
+            issGroup.scale.set(0.65, 0.65, 0.65);
+            issGroup.position.set(-15, 4, 1);
+            scene.add(issGroup);
+
+            // 4. SHOOTING STARS / METEORS SYSTEM
+            const meteorCount = 4;
+            const meteors = [];
+
+            for (let i = 0; i < meteorCount; i++) {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(6); // 2 points (head and tail)
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const material = new THREE.LineBasicMaterial({
+                    color: 0x38bdf8,
+                    transparent: true,
+                    opacity: 0.9,
+                    linewidth: 2
+                });
+
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+
+                meteors.push({
+                    mesh: line,
+                    x: (Math.random() - 0.5) * 30,
+                    y: Math.random() * 15 + 5,
+                    z: (Math.random() - 0.5) * 10,
+                    speed: Math.random() * 0.25 + 0.15,
+                    length: Math.random() * 1.5 + 1.0,
+                    active: true
+                });
+            }
+
+            function resetMeteor(m) {
+                m.x = Math.random() * 20 - 5;
+                m.y = Math.random() * 10 + 6;
+                m.z = Math.random() * 10 - 5;
+                m.speed = Math.random() * 0.22 + 0.12;
+            }
+
+            // Mouse Interactive Parallax
+            let mouseX = 0;
+            let mouseY = 0;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 0.4;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 0.4;
+            });
+
+            // Window Resize Handler
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // 5. ANIMATION LOOP
+            let issProgress = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotate Stars & Earth
+                starField.rotation.y += 0.0002;
+                earthGroup.rotation.y += 0.0015;
+                earthGroup.rotation.x += 0.0005;
+
+                // Animate Space Station Orbit Gliding Across Sky
+                issProgress += 0.0025;
+                if (issProgress > 1) issProgress = 0;
+
+                // Smooth arc flight path across screen
+                issGroup.position.x = -16 + issProgress * 32;
+                issGroup.position.y = 4.5 + Math.sin(issProgress * Math.PI) * 1.8;
+                issGroup.rotation.x += 0.004;
+                issGroup.rotation.y += 0.006;
+                issGroup.rotation.z = Math.sin(issProgress * 5) * 0.2;
+
+                // Animate Shooting Stars / Meteors
+                meteors.forEach(m => {
+                    m.x -= m.speed * 1.2;
+                    m.y -= m.speed * 0.8;
+
+                    const positions = m.mesh.geometry.attributes.position.array;
+                    // Head
+                    positions[0] = m.x;
+                    positions[1] = m.y;
+                    positions[2] = m.z;
+                    // Tail
+                    positions[3] = m.x + m.length * 1.2;
+                    positions[4] = m.y + m.length * 0.8;
+                    positions[5] = m.z;
+
+                    m.mesh.geometry.attributes.position.needsUpdate = true;
+
+                    if (m.y < -12 || m.x < -20) {
+                        resetMeteor(m);
+                    }
+                });
+
+                // Camera mouse ease
+                camera.position.x += (mouseX - camera.position.x) * 0.04;
+                camera.position.y += (-mouseY - camera.position.y) * 0.04;
+
+                renderer.render(scene, camera);
+            }
+            
+            // Start Animation Loop on load
+            animate();
+        }
+    </script>
+</body>
+</html>
